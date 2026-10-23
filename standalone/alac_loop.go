@@ -19,6 +19,7 @@ type alacLoopState struct {
 // Setup pages stay private in memory. The fallback is removed before replay;
 // writes use separate pages so each sample starts with the same setup state.
 type alacLoopMemory struct {
+	pages                                [512]*[1024]alacLoopPage
 	initial                              map[uint64][]byte
 	dirty                                map[uint64][]byte
 	read                                 func(uint64, uint64) []byte
@@ -26,12 +27,37 @@ type alacLoopMemory struct {
 	stackLo, stackHi, sampleLo, sampleHi uint64
 }
 
+type alacLoopPage struct {
+	data  []byte
+	dirty bool
+}
+
 func (m *alacLoopMemory) page(address uint64) []byte {
+	if address>>22 >= uint64(len(m.pages)) {
+		panic("Go ALAC setup address rejected")
+	}
+	if table := m.pages[address>>22]; table != nil {
+		if p := table[address>>12&1023].data; p != nil {
+			return p
+		}
+	}
+	return m.loadPage(address)
+}
+
+// Sparse page tables avoid hashing on every translated memory access. Maps
+// retain ownership for snapshots and cleanup; the table only indexes them.
+func (m *alacLoopMemory) loadPage(address uint64) []byte {
 	base := address &^ (alacLoopPageSize - 1)
+	if m.pages[address>>22] == nil {
+		m.pages[address>>22] = new([1024]alacLoopPage)
+	}
+	entry := &m.pages[address>>22][address>>12&1023]
 	if p := m.dirty[base]; p != nil {
+		*entry = alacLoopPage{data: p, dirty: true}
 		return p
 	}
 	if p := m.initial[base]; p != nil {
+		entry.data = p
 		return p
 	}
 	if m.read == nil {
@@ -47,6 +73,7 @@ func (m *alacLoopMemory) page(address uint64) []byte {
 	p := m.read(base, alacLoopPageSize)
 	m.reads++
 	m.initial[base] = p
+	entry.data = p
 	return p
 }
 
@@ -79,11 +106,14 @@ func (m *alacLoopMemory) writable(address, size uint64) []byte {
 		panic("Go ALAC write outside private stack/sample")
 	}
 	base := address &^ (alacLoopPageSize - 1)
-	if p := m.dirty[base]; p != nil {
-		return p
+	page := m.page(address)
+	entry := &m.pages[address>>22][address>>12&1023]
+	if entry.dirty {
+		return page
 	}
-	p := bytes.Clone(m.page(address))
+	p := bytes.Clone(page)
 	m.dirty[base] = p
+	*entry = alacLoopPage{data: p, dirty: true}
 	return p
 }
 
@@ -134,8 +164,11 @@ func (m *alacLoopMemory) copyOut(data []byte, address uint64) {
 }
 
 func (m *alacLoopMemory) reset() {
-	for _, p := range m.dirty {
+	for base, p := range m.dirty {
 		clear(p)
+		if table := m.pages[base>>22]; table != nil {
+			table[base>>12&1023] = alacLoopPage{data: m.initial[base]}
+		}
 	}
 	clear(m.dirty)
 }
@@ -146,6 +179,7 @@ func (m *alacLoopMemory) close() {
 		clear(p)
 	}
 	clear(m.initial)
+	clear(m.pages[:])
 	m.read = nil
 }
 

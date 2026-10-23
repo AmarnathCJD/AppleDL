@@ -24,23 +24,28 @@ type DownloadOptions struct {
 // and worker cloning, setup reads and cleanup. TotalDuration includes metadata,
 // acquisition and licensing; constructor authentication is excluded.
 type DownloadResult struct {
-	Path                string
-	EncryptedPath       string
-	ContextPath         string
-	Format              Format
-	Workers             int
-	Samples             int
-	SampleRate          uint32
-	BitDepth            uint8
-	Channels            uint8
-	EncryptedBytes      int64
-	AcquisitionDuration time.Duration
-	LicenseDuration     time.Duration
-	SetupDuration       time.Duration
-	CloneDuration       time.Duration
-	SampleDuration      time.Duration
-	DecryptionDuration  time.Duration
-	TotalDuration       time.Duration
+	Path                    string
+	EncryptedPath           string
+	ContextPath             string
+	Format                  Format
+	Workers                 int
+	Samples                 int
+	SampleRate              uint32
+	BitDepth                uint8
+	Channels                uint8
+	EncryptedBytes          int64
+	AcquisitionDuration     time.Duration
+	LicenseDuration         time.Duration
+	LicenseRuntimeDuration  time.Duration
+	LicenseSPCDuration      time.Duration
+	LicenseHeadersDuration  time.Duration
+	LicenseExchangeDuration time.Duration
+	LicenseCKCDuration      time.Duration
+	SetupDuration           time.Duration
+	CloneDuration           time.Duration
+	SampleDuration          time.Duration
+	DecryptionDuration      time.Duration
+	TotalDuration           time.Duration
 }
 
 func selectFormat(formats []Format, id string) (int, error) {
@@ -143,6 +148,8 @@ func (c *Client) DownloadAndDecryptSong(ctx context.Context, id, destination str
 		Samples: result.Samples, SampleRate: result.SampleRate, BitDepth: result.BitDepth, Channels: result.Channels,
 		EncryptedBytes: result.EncryptedBytes, AcquisitionDuration: result.AcquisitionDuration,
 		LicenseDuration: result.LicenseDuration, SetupDuration: result.SetupDuration, CloneDuration: result.CloneDuration,
+		LicenseRuntimeDuration: result.LicenseRuntimeDuration, LicenseSPCDuration: result.LicenseSPCDuration,
+		LicenseHeadersDuration: result.LicenseHeadersDuration, LicenseExchangeDuration: result.LicenseExchangeDuration, LicenseCKCDuration: result.LicenseCKCDuration,
 		SampleDuration: result.SampleDuration, DecryptionDuration: result.DecryptionDuration,
 		TotalDuration: time.Since(started)}, nil
 }

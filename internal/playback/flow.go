@@ -44,22 +44,27 @@ type Config struct {
 }
 
 type Result struct {
-	Path                string
-	EncryptedPath       string
-	ContextPath         string
-	Workers             int
-	Samples             int
-	SampleRate          uint32
-	BitDepth            uint8
-	Channels            uint8
-	EncryptedBytes      int64
-	AcquisitionDuration time.Duration
-	LicenseDuration     time.Duration
-	SetupDuration       time.Duration
-	CloneDuration       time.Duration
-	SampleDuration      time.Duration
-	DecryptionDuration  time.Duration
-	TotalDuration       time.Duration
+	Path                    string
+	EncryptedPath           string
+	ContextPath             string
+	Workers                 int
+	Samples                 int
+	SampleRate              uint32
+	BitDepth                uint8
+	Channels                uint8
+	EncryptedBytes          int64
+	AcquisitionDuration     time.Duration
+	LicenseDuration         time.Duration
+	LicenseRuntimeDuration  time.Duration
+	LicenseSPCDuration      time.Duration
+	LicenseHeadersDuration  time.Duration
+	LicenseExchangeDuration time.Duration
+	LicenseCKCDuration      time.Duration
+	SetupDuration           time.Duration
+	CloneDuration           time.Duration
+	SampleDuration          time.Duration
+	DecryptionDuration      time.Duration
+	TotalDuration           time.Duration
 }
 
 func Run(ctx context.Context, cfg Config) (result *Result, err error) {
@@ -109,18 +114,32 @@ func Run(ctx context.Context, cfg Config) (result *Result, err error) {
 	}()
 	for i, key := range keys {
 		version, _ := strconv.ParseUint(key.Versions, 10, 32)
+		phase := time.Now()
 		p, e := standalone.NewPlaybackExchange(ctx, cfg.Runtime, cfg.Metadata.StableID)
+		result.LicenseRuntimeDuration += time.Since(phase)
 		if e != nil {
 			return result, e
 		}
 		contexts = append(contexts, p)
+		phase = time.Now()
 		spc, e := p.SPC(ctx, cert, key.URI, uint32(version))
+		result.LicenseSPCDuration += time.Since(phase)
 		if e != nil {
 			return result, e
 		}
 		request := am.LicenseRequest{Protocol: "simplified", GUID: cfg.Metadata.StableID, AssetID: cfg.AssetID, KeyURI: key.URI, SPC: base64.StdEncoding.EncodeToString(spc)}
 		clear(spc)
-		license, e := cfg.Protocol.FetchPlaybackLicense(ctx, cfg.Profile, cfg.Session, cfg.Metadata, request, cfg.Prepare)
+		phase = time.Now()
+		var headers time.Duration
+		prepare := func(ctx context.Context, plan am.PlaybackRequestPlan) (http.Header, error) {
+			start := time.Now()
+			h, err := cfg.Prepare(ctx, plan)
+			headers += time.Since(start)
+			return h, err
+		}
+		license, e := cfg.Protocol.FetchPlaybackLicense(ctx, cfg.Profile, cfg.Session, cfg.Metadata, request, prepare)
+		result.LicenseHeadersDuration += headers
+		result.LicenseExchangeDuration += time.Since(phase) - headers
 		request.SPC = ""
 		if e != nil {
 			return result, e
@@ -136,7 +155,9 @@ func Run(ctx context.Context, cfg Config) (result *Result, err error) {
 			clear(ckc)
 			return result, errors.New("invalid CKC encoding")
 		}
+		phase = time.Now()
 		e = p.LoadCKC(ctx, ckc)
+		result.LicenseCKCDuration += time.Since(phase)
 		clear(ckc)
 		if e != nil {
 			return result, e
