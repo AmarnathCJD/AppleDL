@@ -1,0 +1,112 @@
+{
+    "enhanced-audio":  {
+                           "hls-prefetch-skd-urls":  [
+                                                         "skd://itunes.apple.com/P000000000/s1/e1"
+                                                     ],
+                           "max-hls-ratio":  20,
+                           "hls-key-server-url":  "https://play.itunes.apple.com/WebObjects/MZPlay.woa/music/fps"
+                       },
+    "fps-cert":  "https://s.mzstatic.com/skdtool_2021_certbundle.bin",
+    "externalAppIntegrity":  {
+                                 "headers":  [
+                                                 "x-apple-client-app-verification",
+                                                 "app-context"
+                                             ],
+                                 "paths":  [
+                                               "/account/v2/create",
+                                               "/WebObjects/MZFinance.woa/wa/authenticate",
+                                               "/auth/v1/native"
+                                           ]
+                             },
+    "account-flow-url-patterns":  "https?://(p\\d{1,3}-)?buy[.]itunes[.]apple[.]com/WebObjects/MZFinance.woa/wa/.*(signup|convert)Wizard.*|https?://amp-account[.][^.]+[.]apple[.]com/account/v2/signUpWizard.*",
+    "musicMescal":  {
+                        "headers":  [
+                                        "x-dsid",
+                                        "x-apple-store-front",
+                                        "x-apple-client-application",
+                                        "x-request-timestamp",
+                                        "X-Apple-I-Client-Time"
+                                    ],
+                        "primeUrl":  "https://se2.itunes.apple.com/WebObjects/MZStoreElements2.woa/wa/prime",
+                        "fields":  [
+                                       "activities",
+                                       "activity",
+                                       "activityCurator",
+                                       "activityCurators",
+                                       "activityId",
+                                       "activityIds",
+                                       "album",
+                                       "albums",
+                                       "artist",
+                                       "artists",
+                                       "brand",
+                                       "brands",
+                                       "comment",
+                                       "commentId",
+                                       "comments",
+                                       "enable",
+                                       "iTunesBrand",
+                                       "iTunesBrands",
+                                       "id",
+                                       "offsetId",
+                                       "ownderId",
+                                       "ownderIdType",
+                                       "playlist",
+                                       "playlists",
+                                       "post",
+                                       "posts",
+                                       "radio",
+                                       "targetId",
+                                       "targetIdType",
+                                       "track",
+                                       "tracks",
+                                       "uploadedAudio",
+                                       "uploadedVideo",
+                                       "uploadedVideos",
+                                       "user",
+                                       "users",
+                                       "domain",
+                                       "userId",
+                                       "storefrontId"
+                                   ],
+                        "actions":  [
+                                        "enableAutoFollow",
+                                        "like",
+                                        "unlike",
+                                        "addComment",
+                                        "deleteComment",
+                                        "follow",
+                                        "unfollow",
+                                        "incrementShareCount",
+                                        "createSocialPost",
+                                        "updateProfile",
+                                        "lyrics",
+                                        "timeSyncedLyrics",
+                                        "ttmlLyrics",
+                                        "discoverFriends",
+                                        "findMoreFriends",
+                                        "findSubscribers",
+                                        "followProfile",
+                                        "followProfiles",
+                                        "followRequest",
+                                        "followRequests",
+                                        "getOAuthSocialNetworks",
+                                        "OAuthSocialNetwork",
+                                        "offboard",
+                                        "onboard",
+                                        "socialNetworkConnections",
+                                        "socialProfile",
+                                        "unfollowProfile",
+                                        "setPrivateSocialPlaylists",
+                                        "getPrivateSocialPlaylists",
+                                        "setPushNotificationSettings",
+                                        "removeFollower",
+                                        "removeRecommendedFriend",
+                                        "getFollowStates",
+                                        "setListeningToSettings",
+                                        "updateListeningToPreferences",
+                                        "fetchAll",
+                                        "/infra/ondevice/xcdn/model/archive/v3"
+                                    ]
+                    }
+}

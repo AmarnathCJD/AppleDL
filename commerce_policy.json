@@ -1,0 +1,545 @@
+{
+    "sign-sap-request":  {
+                             "MZDaap":  [
+                                            "defaultDaap",
+                                            "databases",
+                                            "items",
+                                            "containers",
+                                            "edit",
+                                            "update",
+                                            "cloudArtworkInfo",
+                                            "cloudLyricsInfo",
+                                            "getgeniusitems",
+                                            "cloudAdd",
+                                            "addFavorite",
+                                            "groups",
+                                            "collaboration",
+                                            "pins",
+                                            "process"
+                                        ],
+                             "commerce/account/subscription/offers":  [
+                                                                          "device"
+                                                                      ],
+                             "/v1/me/social/":  [
+                                                    "followers",
+                                                    "followees",
+                                                    "profile",
+                                                    "listening-to",
+                                                    "blocked-profiles"
+                                                ],
+                             "handshake":  [
+                                               "handshake"
+                                           ],
+                             "MZPurchaseDaap":  [
+                                                    "databases",
+                                                    "items",
+                                                    "containers",
+                                                    "edit",
+                                                    "update",
+                                                    "cloudArtworkInfo",
+                                                    "cloudLyricsInfo"
+                                                ],
+                             "inApps/v2/externalPurchase":  [
+                                                                "token"
+                                                            ],
+                             "MZTilt":  [
+                                            "sync",
+                                            "history",
+                                            "getLikesBans",
+                                            "likeEvent",
+                                            "playEvent",
+                                            "wishlistEvent"
+                                        ],
+                             "subscription/v1/device":  [
+                                                            "register"
+                                                        ],
+                             "SGCourier":  [
+                                               "downloadRequests",
+                                               "uploadResponses",
+                                               "updateTrackAssets",
+                                               "updateAssets"
+                                           ],
+                             "inApps/v2/externalPurchase/token":  [
+                                                                      "refresh"
+                                                                  ],
+                             "inApps/v1":  [
+                                               "refund",
+                                               "rescindConsent"
+                                           ],
+                             "UCGovernor":  [
+                                                "requestCloudLibraryUpdate",
+                                                "checkCloudUpdateStatus"
+                                            ],
+                             "inApps/v1/offer":  [
+                                                     "eligibility"
+                                                 ],
+                             "/v1/me/social/profile/attribute/":  [
+                                                                      "acceptedTerms"
+                                                                  ],
+                             "MZStoreElements2":  [
+                                                      "followProfile",
+                                                      "followRequest",
+                                                      "inAppMessagesSync",
+                                                      "inAppMessagesSerialCheck",
+                                                      "inAppMessagesReportEvent",
+                                                      "setPushNotificationSettings"
+                                                  ],
+                             "MZFinance":  [
+                                               "authenticate"
+                                           ],
+                             "inApps/v1/externalPurchase/token":  [
+                                                                      "create",
+                                                                      "status"
+                                                                  ],
+                             "MZContentPlay":  [
+                                                   "fetchTrack"
+                                               ],
+                             "auth/v1":  [
+                                             "native"
+                                         ],
+                             "MZTiltActivity":  [
+                                                    "likeEvent",
+                                                    "playEvent",
+                                                    "wishlistEvent",
+                                                    "play"
+                                                ],
+                             "BDSync":  [
+                                            "sync"
+                                        ],
+                             "auth/v1/qr":  [
+                                                "native",
+                                                "status"
+                                            ],
+                             "subscription/v1/channel":  [
+                                                             "checkChannelOffers"
+                                                         ],
+                             "/v1/me/social/recommended-friends/":  [
+                                                                        "find",
+                                                                        "discover"
+                                                                    ],
+                             "MZPlay":  [
+                                            "sRdnld",
+                                            "downloadProduct",
+                                            "onDemandResources"
+                                        ],
+                             "auth/v1/native":  [
+                                                    "fast"
+                                                ],
+                             "UCChannel":  [
+                                               "updateLibrary"
+                                           ],
+                             "MZBuy":  [
+                                           "authenticate"
+                                       ],
+                             "/v1/social/":  [
+                                                 "followers",
+                                                 "followees",
+                                                 "listening-to",
+                                                 "blocked-profiles"
+                                             ]
+                         },
+    "signed-actions":  {
+                           "MZStorePlatform":  {
+                                                   "lookup":  {
+                                                                  "headers":  [
+                                                                                  "x-dsid",
+                                                                                  "x-apple-store-front",
+                                                                                  "x-apple-client-application",
+                                                                                  "x-request-timestamp"
+                                                                              ],
+                                                                  "fields":  [
+                                                                                 "p",
+                                                                                 "id",
+                                                                                 "bundleId"
+                                                                             ],
+                                                                  "url":  "https://sp.itunes.apple.com/WebObjects/MZStorePlatform.woa/wa/lookup"
+                                                              }
+                                               },
+                           "/v1/me/social/":  {
+                                                  "listening-to":  {
+                                                                       "headers":  [
+                                                                                       "x-dsid",
+                                                                                       "x-request-timestamp"
+                                                                                   ],
+                                                                       "path":  true,
+                                                                       "fields":  [
+
+                                                                                  ]
+                                                                   },
+                                                  "pending-followers":  {
+                                                                            "headers":  [
+                                                                                            "x-dsid",
+                                                                                            "x-request-timestamp"
+                                                                                        ],
+                                                                            "path":  true,
+                                                                            "fields":  [
+
+                                                                                       ]
+                                                                        },
+                                                  "pending-followees":  {
+                                                                            "headers":  [
+                                                                                            "x-dsid",
+                                                                                            "x-request-timestamp"
+                                                                                        ],
+                                                                            "path":  true,
+                                                                            "fields":  [
+
+                                                                                       ]
+                                                                        },
+                                                  "followers":  {
+                                                                    "headers":  [
+                                                                                    "x-dsid",
+                                                                                    "x-request-timestamp"
+                                                                                ],
+                                                                    "path":  true,
+                                                                    "fields":  [
+
+                                                                               ]
+                                                                },
+                                                  "shared-playlists":  {
+                                                                           "headers":  [
+                                                                                           "x-dsid",
+                                                                                           "x-request-timestamp"
+                                                                                       ],
+                                                                           "path":  true,
+                                                                           "fields":  [
+
+                                                                                      ]
+                                                                       },
+                                                  "more-to-follow":  {
+                                                                         "headers":  [
+                                                                                         "x-dsid",
+                                                                                         "x-request-timestamp"
+                                                                                     ],
+                                                                         "path":  true,
+                                                                         "fields":  [
+
+                                                                                    ]
+                                                                     },
+                                                  "followees":  {
+                                                                    "headers":  [
+                                                                                    "x-dsid",
+                                                                                    "x-request-timestamp"
+                                                                                ],
+                                                                    "path":  true,
+                                                                    "fields":  [
+
+                                                                               ]
+                                                                },
+                                                  "profile":  {
+                                                                  "headers":  [
+                                                                                  "x-dsid",
+                                                                                  "x-request-timestamp"
+                                                                              ],
+                                                                  "path":  true,
+                                                                  "fields":  [
+
+                                                                             ]
+                                                              },
+                                                  "blocked-profiles":  {
+                                                                           "headers":  [
+                                                                                           "x-dsid",
+                                                                                           "x-request-timestamp"
+                                                                                       ],
+                                                                           "path":  true,
+                                                                           "fields":  [
+
+                                                                                      ]
+                                                                       },
+                                                  "social-profiles":  {
+                                                                          "headers":  [
+                                                                                          "x-dsid",
+                                                                                          "x-request-timestamp"
+                                                                                      ],
+                                                                          "path":  true,
+                                                                          "fields":  [
+                                                                                         "ids"
+                                                                                     ]
+                                                                      }
+                                              },
+                           "apiToken":  {
+                                            "apiToken":  {
+                                                             "headers":  [
+                                                                             "x-apple-store-front",
+                                                                             "x-apple-client-application",
+                                                                             "x-request-timestamp",
+                                                                             "x-apple-amd-m",
+                                                                             "x-dsid"
+                                                                         ],
+                                                             "fields":  [
+                                                                            "clientId"
+                                                                        ]
+                                                         }
+                                        },
+                           "infra/he":  {
+                                            "fetchConfigs":  {
+                                                                 "headers":  [
+                                                                                 "X-Apple-I-Client-Time"
+                                                                             ],
+                                                                 "fields":  [
+                                                                                "userId"
+                                                                            ]
+                                                             },
+                                            "uploadEvalKeys":  {
+                                                                   "headers":  [
+                                                                                   "X-Apple-I-Client-Time"
+                                                                               ],
+                                                                   "fields":  [
+                                                                                  "userId"
+                                                                              ]
+                                                               },
+                                            "query":  {
+                                                          "headers":  [
+                                                                          "X-Apple-I-Client-Time"
+                                                                      ],
+                                                          "fields":  [
+                                                                         "userId"
+                                                                     ]
+                                                      },
+                                            "queries":  {
+                                                            "headers":  [
+                                                                            "X-Apple-I-Client-Time"
+                                                                        ],
+                                                            "fields":  [
+                                                                           "userId"
+                                                                       ]
+                                                        }
+                                        },
+                           "infra/ondevice":  {
+                                                  "fetchAll":  {
+                                                                   "headers":  [
+                                                                                   "X-Apple-I-Client-Time"
+                                                                               ],
+                                                                   "fields":  [
+                                                                                  "domain",
+                                                                                  "userId",
+                                                                                  "storefrontId"
+                                                                              ]
+                                                               },
+                                                  "config":  {
+                                                                 "headers":  [
+                                                                                 "X-Apple-I-Client-Time"
+                                                                             ]
+                                                             }
+                                              },
+                           "/v1/social/":  {
+                                               "listening-to":  {
+                                                                    "headers":  [
+                                                                                    "x-dsid",
+                                                                                    "x-request-timestamp"
+                                                                                ],
+                                                                    "path":  true,
+                                                                    "fields":  [
+
+                                                                               ]
+                                                                },
+                                               "pending-followers":  {
+                                                                         "headers":  [
+                                                                                         "x-dsid",
+                                                                                         "x-request-timestamp"
+                                                                                     ],
+                                                                         "path":  true,
+                                                                         "fields":  [
+
+                                                                                    ]
+                                                                     },
+                                               "pending-followees":  {
+                                                                         "headers":  [
+                                                                                         "x-dsid",
+                                                                                         "x-request-timestamp"
+                                                                                     ],
+                                                                         "path":  true,
+                                                                         "fields":  [
+
+                                                                                    ]
+                                                                     },
+                                               "followers":  {
+                                                                 "headers":  [
+                                                                                 "x-dsid",
+                                                                                 "x-request-timestamp"
+                                                                             ],
+                                                                 "path":  true,
+                                                                 "fields":  [
+
+                                                                            ]
+                                                             },
+                                               "shared-playlists":  {
+                                                                        "headers":  [
+                                                                                        "x-dsid",
+                                                                                        "x-request-timestamp"
+                                                                                    ],
+                                                                        "path":  true,
+                                                                        "fields":  [
+
+                                                                                   ]
+                                                                    },
+                                               "more-to-follow":  {
+                                                                      "headers":  [
+                                                                                      "x-dsid",
+                                                                                      "x-request-timestamp"
+                                                                                  ],
+                                                                      "path":  true,
+                                                                      "fields":  [
+
+                                                                                 ]
+                                                                  },
+                                               "followees":  {
+                                                                 "headers":  [
+                                                                                 "x-dsid",
+                                                                                 "x-request-timestamp"
+                                                                             ],
+                                                                 "path":  true,
+                                                                 "fields":  [
+
+                                                                            ]
+                                                             },
+                                               "blocked-profiles":  {
+                                                                        "headers":  [
+                                                                                        "x-dsid",
+                                                                                        "x-request-timestamp"
+                                                                                    ],
+                                                                        "path":  true,
+                                                                        "fields":  [
+
+                                                                                   ]
+                                                                    },
+                                               "social-profiles":  {
+                                                                       "headers":  [
+                                                                                       "x-dsid",
+                                                                                       "x-request-timestamp"
+                                                                                   ],
+                                                                       "path":  true,
+                                                                       "fields":  [
+                                                                                      "ids"
+                                                                                  ]
+                                                                   }
+                                           }
+                       },
+    "fpdi-config":  {
+                        "session-refresh-percentage":  0.15,
+                        "hash-algo":  "SHA-256",
+                        "signed-actions":  [
+                                               {
+                                                   "mode":  "basic",
+                                                   "criteria":  {
+                                                                    "action":  {
+                                                                                   "api/v1":  [
+                                                                                                  "saveUserReview"
+                                                                                              ]
+                                                                               }
+                                                                },
+                                                   "actions":  {
+                                                                   "headers":  [
+                                                                                   "X-Apple-Store-Front",
+                                                                                   "X-DSID",
+                                                                                   "User-Agent"
+                                                                               ],
+                                                                   "body":  true,
+                                                                   "params":  [
+                                                                                  "id",
+                                                                                  "version"
+                                                                              ]
+                                                               }
+                                               },
+                                               {
+                                                   "mode":  "full",
+                                                   "criteria":  {
+                                                                    "urlRegex":  "^https://.*-?buy[.]itunes[.]apple[.]com/commerce/account/subscription/offers/device($|[?].*)"
+                                                                },
+                                                   "actions":  {
+                                                                   "headers":  [
+                                                                                   "X-DSID",
+                                                                                   "User-Agent"
+                                                                               ],
+                                                                   "body":  true
+                                                               }
+                                               },
+                                               {
+                                                   "mode":  "basic",
+                                                   "criteria":  {
+                                                                    "action":  {
+                                                                                   "MZPlay":  [
+                                                                                                  "acquireAirPlayLicense"
+                                                                                              ]
+                                                                               }
+                                                                },
+                                                   "actions":  {
+                                                                   "body":  true
+                                                               }
+                                               },
+                                               {
+                                                   "mode":  "basic",
+                                                   "criteria":  {
+                                                                    "urlRegex":  "^https://amp-account\\.apps\\.apple\\.com/account/adAttributionKit/fxRates$"
+                                                                },
+                                                   "actions":  {
+                                                                   "headers":  [
+                                                                                   "X-Apple-Day-Timestamp"
+                                                                               ]
+                                                               }
+                                               },
+                                               {
+                                                   "mode":  "full",
+                                                   "criteria":  {
+                                                                    "urlRegex":  "/WebObjects/(MZPlayLocal|MZPlay)[.]woa/hls/health/license(.*)"
+                                                                },
+                                                   "actions":  {
+                                                                   "body":  true
+                                                               }
+                                               },
+                                               {
+                                                   "mode":  "full",
+                                                   "criteria":  {
+                                                                    "action":  {
+                                                                                   "auth/v2":  [
+                                                                                                   "native"
+                                                                                               ]
+                                                                               }
+                                                                },
+                                                   "actions":  {
+                                                                   "body":  true
+                                                               }
+                                               }
+                                           ],
+                        "session-duration":  28800,
+                        "maxSetupRetryCount":  2,
+                        "order":  [
+                                      "headers",
+                                      "params",
+                                      "cookies",
+                                      "path",
+                                      "body"
+                                  ]
+                    },
+    "amd-domains":  [
+                        "buy.itunes.apple.com",
+                        "*-buy.itunes.apple.com",
+                        "play.itunes.apple.com",
+                        "radio-activity.itunes.apple.com",
+                        "radio.itunes.apple.com",
+                        "sp.itunes.apple.com",
+                        "search.itunes.apple.com",
+                        "carrierbundle.itunes.apple.com",
+                        "sf-api-token-service.itunes.apple.com",
+                        "amp-account.itunes.apple.com",
+                        "mzstorekit.itunes.apple.com",
+                        "buylite.itunes.apple.com",
+                        "buylite-edge.itunes.apple.com",
+                        "downloaddispatch.itunes.apple.com",
+                        "auth.itunes.apple.com",
+                        "auth.tv.apple.com",
+                        "sandbox.itunes.apple.com",
+                        "ph2.itunes.apple.com",
+                        "speedybuy.itunes.apple.com",
+                        "speedybuy.apps.apple.com",
+                        "musicstatus.itunes.apple.com",
+                        "*ams-store.ucp.apple.com",
+                        "*ams-store.apple.com",
+                        "*.g.apple.com",
+                        "mobileapp.apple.com",
+                        "amp-api.games.apple.com"
+                    ],
+    "md-domains":  [
+                       "buy.itunes.apple.com"
+                   ]
+}

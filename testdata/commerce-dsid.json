@@ -1,0 +1,197 @@
+{
+  "source": "Apple Music Android 7.0.0-beta (1606) ARM64 libAMSKit.so",
+  "sha256": "8ea0b4da3a7ec5022e3985428390430b0e4294d75cafb7c8ec3b0ea5fa4084a4",
+  "entry_elf": "0x58e69c",
+  "method": "Unicorn execution; error==0 and full consumption as in ELF 0x58e544",
+  "cases": [
+    {
+      "input": "",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": "0",
+      "accepted": true,
+      "native_error": 0,
+      "consumed_bytes": 1,
+      "value": "0"
+    },
+    {
+      "input": "00",
+      "accepted": true,
+      "native_error": 0,
+      "consumed_bytes": 2,
+      "value": "0"
+    },
+    {
+      "input": "0000123",
+      "accepted": true,
+      "native_error": 0,
+      "consumed_bytes": 7,
+      "value": "123"
+    },
+    {
+      "input": "123",
+      "accepted": true,
+      "native_error": 0,
+      "consumed_bytes": 3,
+      "value": "123"
+    },
+    {
+      "input": "9223372036854775807",
+      "accepted": true,
+      "native_error": 0,
+      "consumed_bytes": 19,
+      "value": "9223372036854775807"
+    },
+    {
+      "input": "9223372036854775808",
+      "accepted": true,
+      "native_error": 0,
+      "consumed_bytes": 19,
+      "value": "9223372036854775808"
+    },
+    {
+      "input": "18446744073709551615",
+      "accepted": true,
+      "native_error": 0,
+      "consumed_bytes": 20,
+      "value": "18446744073709551615"
+    },
+    {
+      "input": "18446744073709551616",
+      "accepted": false,
+      "native_error": 34,
+      "consumed_bytes": 20
+    },
+    {
+      "input": "99999999999999999999999999",
+      "accepted": false,
+      "native_error": 34,
+      "consumed_bytes": 26
+    },
+    {
+      "input": "-1",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": "-0",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": "+1",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": "+0",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": " 1",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": "1 ",
+      "accepted": false,
+      "native_error": 0,
+      "consumed_bytes": 1
+    },
+    {
+      "input": "\t1",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": "1\n",
+      "accepted": false,
+      "native_error": 0,
+      "consumed_bytes": 1
+    },
+    {
+      "input": "0x10",
+      "accepted": false,
+      "native_error": 0,
+      "consumed_bytes": 1
+    },
+    {
+      "input": "1.0",
+      "accepted": false,
+      "native_error": 0,
+      "consumed_bytes": 1
+    },
+    {
+      "input": "1e3",
+      "accepted": false,
+      "native_error": 0,
+      "consumed_bytes": 1
+    },
+    {
+      "input": "1_000",
+      "accepted": false,
+      "native_error": 0,
+      "consumed_bytes": 1
+    },
+    {
+      "input": "123suffix",
+      "accepted": false,
+      "native_error": 0,
+      "consumed_bytes": 3
+    },
+    {
+      "input": "0suffix",
+      "accepted": false,
+      "native_error": 0,
+      "consumed_bytes": 1
+    },
+    {
+      "input": "\u0661",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": "\uff11",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": "1\u0000",
+      "accepted": false,
+      "native_error": 0,
+      "consumed_bytes": 1
+    },
+    {
+      "input": "\u00001",
+      "accepted": false,
+      "native_error": 22,
+      "consumed_bytes": 0
+    },
+    {
+      "input": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "accepted": true,
+      "native_error": 0,
+      "consumed_bytes": 1000,
+      "value": "0"
+    },
+    {
+      "input": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000018446744073709551615",
+      "accepted": true,
+      "native_error": 0,
+      "consumed_bytes": 1020,
+      "value": "18446744073709551615"
+    }
+  ]
+}
