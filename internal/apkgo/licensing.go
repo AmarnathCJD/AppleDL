@@ -6,6 +6,22 @@ package apkgo
 func (m *Machine) licenseLoop(end, budget uint64) uint64 {
 	offset := m.CPU.PC - m.licenseBase
 	switch offset {
+	case 0x56ea90, 0x56ec24:
+		if used := m.decodeMontgomery(end, budget); used != 0 {
+			return used
+		}
+	case 0x575534:
+		if used := m.encodeMontgomery(end, budget); used != 0 {
+			return used
+		}
+	case 0x56f2e4:
+		if used := m.inverseMontgomery(end, budget); used != 0 {
+			return used
+		}
+	case 0x573ac8:
+		if used := m.multiplyMontgomery(end, budget); used != 0 {
+			return used
+		}
 	case 0x572c98:
 		if used := m.squareMontgomery(end, budget); used != 0 {
 			return used
