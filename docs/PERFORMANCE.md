@@ -1,5 +1,45 @@
 # ALAC decryption performance
 
+## Playback preparation optimization, 2026-10-24
+
+Measured on the same Linux amd64 VPS (8 CPUs, 16 GB RAM), with Go 1.26.2,
+CGO disabled and 16 decryption workers. Each run used the same 40,879,747-byte,
+24-bit/44.1 kHz stereo ALAC track. Cold and warm refer to the first and second
+preparation in one process; these are individual measurements, not medians.
+
+| Elapsed stage | Before, cold / warm | After, cold / warm |
+| --- | ---: | ---: |
+| Complete preparation | 10.461 / 9.679 s | 4.521 / 3.654 s |
+| Licensing | 5.971 / 5.577 s | 1.208 / 0.878 s |
+| Local decryption | — | 2.056 / 1.979 s |
+| Decryptor setup | — | 0.048 / 0.053 s |
+
+Complete preparation here is measured by Tunly's client adapter: it includes
+metadata, acquisition, licensing, decryption, remuxing and full-file decode
+validation. It excludes constructor authentication and Telegram upload.
+Acquisition and licensing now overlap, so their durations must not be added.
+Per-key component counters sum work; licensing above is elapsed wall time.
+Apple's license exchange accounted for about 0.54 / 0.57 seconds of work in
+the final cold / warm runs. Sample processing took about 1.93 / 1.92 seconds.
+
+The change compiles frequent licensing blocks to Go, preserves compiled
+execution between the two decryptor observation points, and overlaps acquisition
+with licensing. Independent license contexts are bounded to two workers; account
+header preparation and license requests remain serialized. Cancellation joins
+all started work before cleanup.
+
+Validation compared all 8,448 compiled entries encountered during live playback
+against the reference interpreter, checking registers, flags, scheduling counts
+and mapped memory. This covers the observed inputs, not every possible input.
+Both complete ALAC downloads decoded successfully. The client and Tunly test
+suites passed. A subsequent Telegram smoke prepared the track in 4.495 seconds
+and replaced the original message with audio in 9.954 seconds including upload.
+
+Interpreter fallback and generated machine-state translations remain. These
+measurements do not establish completion of the idiomatic Go rewrite.
+
+## Sample worker sweep, 2026-10-23
+
 Measured on 2026-10-23 with an Intel Core i5-12500H (16 logical CPUs), Windows
 amd64, Go runtime and CGO disabled. The worker sweep used the same 196.18-second,
 24-bit/48 kHz stereo ALAC file and the same in-memory license contexts.

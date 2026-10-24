@@ -249,18 +249,64 @@ type loadedImage struct {
 	image *Image
 }
 type Machine struct {
-	CPU      CPU
-	Memory   Memory
-	loaded   []loadedImage
-	current  *section
-	codeBase uint64
-	Hook     func(uint64)
-	Import   func(uint64)
-	Stop     bool
-	Steps    uint64
+	CPU         CPU
+	Memory      Memory
+	loaded      []loadedImage
+	current     *section
+	codeBase    uint64
+	Hook        func(uint64)
+	Import      func(uint64)
+	Stop        bool
+	Steps       uint64
+	licenseBase uint64
+	observer    *executionObserver
 }
 
-func (m *Machine) Add(i *Image, base uint64) { m.loaded = append(m.loaded, loadedImage{base, i}) }
+type executionObserver struct {
+	addresses []uint64
+	callback  func(uint64)
+}
+
+// ObserveAt observes execution immediately before the specified instructions.
+// Unlike Hook, it permits compiled execution between observation points. The
+// callback may set Stop or redirect PC. A redirect consumes one scheduling visit
+// but executes no instruction. The machine must not be running during install
+// or removal; the returned removal function is safe to call more than once.
+func (m *Machine) ObserveAt(addresses []uint64, callback func(uint64)) (func(), error) {
+	if m.observer != nil || m.Hook != nil {
+		return nil, errors.New("Go execution observer already installed")
+	}
+	if len(addresses) == 0 || callback == nil {
+		return nil, errors.New("Go execution observer requires addresses and callback")
+	}
+	points := make([]uint64, 0, len(addresses))
+	for _, address := range addresses {
+		if address&3 != 0 {
+			return nil, errors.New("Go execution observer requires aligned addresses")
+		}
+		duplicate := false
+		for _, point := range points {
+			duplicate = duplicate || point == address
+		}
+		if !duplicate {
+			points = append(points, address)
+		}
+	}
+	observer := &executionObserver{points, callback}
+	m.observer = observer
+	return func() {
+		if m.observer == observer {
+			m.observer = nil
+		}
+	}, nil
+}
+
+func (m *Machine) Add(i *Image, base uint64) {
+	m.loaded = append(m.loaded, loadedImage{base, i})
+	if i.Hash == "6053ef094762a6462812a441d44771574375c11f0ef540a735b86f922725f924" {
+		m.licenseBase = base
+	}
+}
 func (m *Machine) instruction() (instruction, []operand) {
 	pc := m.CPU.PC
 	if m.current != nil && pc >= m.codeBase && (pc-m.codeBase)/4 < uint64(len(m.current.Code)) {
@@ -315,6 +361,23 @@ func (m *Machine) Run(end, budget uint64) (err error) {
 				break
 			}
 		}
+		observed := false
+		if observer := m.observer; observer != nil {
+			pc := m.CPU.PC
+			for _, address := range observer.addresses {
+				if address == pc {
+					observer.callback(pc)
+					observed = true
+					break
+				}
+			}
+			if m.Stop || m.CPU.PC == end {
+				break
+			}
+			if m.CPU.PC != pc {
+				continue
+			}
+		}
 		if m.CPU.PC >= 0x60000000 && m.CPU.PC < 0x60010000 {
 			m.Import(m.CPU.PC)
 			continue
@@ -327,6 +390,24 @@ func (m *Machine) Run(end, budget uint64) (err error) {
 		if m.CPU.PC == 0x70000104 {
 			m.onceReturn()
 			continue
+		}
+		if m.licenseBase != 0 && m.Hook == nil && !observed {
+			// A compiled block cannot cross an observation point. Execute an
+			// observed instruction individually so fused loops also report every
+			// visit to their entry rather than silently repeating it internally.
+			blockEnd := end
+			if observer := m.observer; observer != nil {
+				for _, address := range observer.addresses {
+					if address > m.CPU.PC && (blockEnd <= m.CPU.PC || address < blockEnd) {
+						blockEnd = address
+					}
+				}
+			}
+			if used := m.licenseLoop(blockEnd, budget-n); used != 0 {
+				m.Steps += used
+				n += used - 1
+				continue
+			}
 		}
 		i, a := m.instruction()
 		m.step(i, a)

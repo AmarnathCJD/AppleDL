@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"runtime"
 	"strconv"
+	"sync"
 	"time"
 
 	am "github.com/AmarnathCJD/AppleDL"
@@ -44,17 +46,20 @@ type Config struct {
 }
 
 type Result struct {
-	Path                    string
-	EncryptedPath           string
-	ContextPath             string
-	Workers                 int
-	Samples                 int
-	SampleRate              uint32
-	BitDepth                uint8
-	Channels                uint8
-	EncryptedBytes          int64
-	AcquisitionDuration     time.Duration
-	LicenseDuration         time.Duration
+	Path           string
+	EncryptedPath  string
+	ContextPath    string
+	Workers        int
+	Samples        int
+	SampleRate     uint32
+	BitDepth       uint8
+	Channels       uint8
+	EncryptedBytes int64
+	// Acquisition and licensing overlap; these durations must not be added.
+	AcquisitionDuration time.Duration
+	LicenseDuration     time.Duration
+	// Component durations sum work across keys, which may run concurrently.
+	// LicenseDuration measures wall time, rather than the sum of these fields.
 	LicenseRuntimeDuration  time.Duration
 	LicenseSPCDuration      time.Duration
 	LicenseHeadersDuration  time.Duration
@@ -81,14 +86,32 @@ func Run(ctx context.Context, cfg Config) (result *Result, err error) {
 	if err != nil {
 		return nil, err
 	}
+	if cfg.Destination != "" {
+		if _, err := alacSegmentKeys(cfg.Manifest, keys); err != nil {
+			return nil, err
+		}
+	}
+	cert := cfg.Certificate
+	if len(cert) == 0 {
+		cert = certificate
+	}
+	if len(cert) > 4<<20 {
+		return nil, errors.New("playback certificate exceeds size limit")
+	}
 	started := time.Now()
 	result = &Result{}
 	defer func() { result.TotalDuration = time.Since(started) }()
 	var job *alacDecryptionJob
-	if cfg.Destination != "" {
-		job, err = prepareALACDecryption(ctx, cfg.Progress, cfg.Manifest, keys, cfg.Destination, cfg.Metadata, cfg.HTTPClient)
-		if err != nil {
-			return result, err
+	acquire := func(ctx context.Context) error {
+		phase := time.Now()
+		defer func() { result.AcquisitionDuration = time.Since(phase) }()
+		if cfg.Destination == "" {
+			return nil
+		}
+		var e error
+		job, e = prepareALACDecryption(ctx, cfg.Progress, cfg.Manifest, keys, cfg.Destination, cfg.Metadata, cfg.HTTPClient)
+		if e != nil {
+			return e
 		}
 		job.result = result
 		job.exportContext = cfg.ExportContext
@@ -96,75 +119,105 @@ func Run(ctx context.Context, cfg Config) (result *Result, err error) {
 		result.SampleRate = job.init.Configuration.SampleRate
 		result.BitDepth = job.init.Configuration.BitDepth
 		result.Channels = job.init.Configuration.Channels
+		return nil
 	}
-	result.AcquisitionDuration = time.Since(started)
-	cert := cfg.Certificate
-	if len(cert) == 0 {
-		cert = certificate
-	}
-	if len(cert) > 4<<20 {
-		return result, errors.New("playback certificate exceeds size limit")
-	}
-	licenseStart := time.Now()
-	var contexts []*standalone.PlaybackExchange
+	contexts := make([]*standalone.PlaybackExchange, len(keys))
 	defer func() {
 		for _, p := range contexts {
-			err = errors.Join(err, p.Close())
+			if p != nil {
+				err = errors.Join(err, p.Close())
+			}
 		}
 	}()
-	for i, key := range keys {
-		version, _ := strconv.ParseUint(key.Versions, 10, 32)
+	// Each key has private runtime state. Keep account requests and caller-supplied
+	// header preparation serial; overlap the expensive local SPC/CKC calculations.
+	requestGate := make(chan struct{}, 1)
+	timings := make([]Result, len(keys))
+	license := func(ctx context.Context) error {
 		phase := time.Now()
-		p, e := standalone.NewPlaybackExchange(ctx, cfg.Runtime, cfg.Metadata.StableID)
-		result.LicenseRuntimeDuration += time.Since(phase)
-		if e != nil {
-			return result, e
-		}
-		contexts = append(contexts, p)
-		phase = time.Now()
-		spc, e := p.SPC(ctx, cert, key.URI, uint32(version))
-		result.LicenseSPCDuration += time.Since(phase)
-		if e != nil {
-			return result, e
-		}
-		request := am.LicenseRequest{Protocol: "simplified", GUID: cfg.Metadata.StableID, AssetID: cfg.AssetID, KeyURI: key.URI, SPC: base64.StdEncoding.EncodeToString(spc)}
-		clear(spc)
-		phase = time.Now()
-		var headers time.Duration
-		prepare := func(ctx context.Context, plan am.PlaybackRequestPlan) (http.Header, error) {
-			start := time.Now()
-			h, err := cfg.Prepare(ctx, plan)
-			headers += time.Since(start)
-			return h, err
-		}
-		license, e := cfg.Protocol.FetchPlaybackLicense(ctx, cfg.Profile, cfg.Session, cfg.Metadata, request, prepare)
-		result.LicenseHeadersDuration += headers
-		result.LicenseExchangeDuration += time.Since(phase) - headers
-		request.SPC = ""
-		if e != nil {
-			return result, e
-		}
-		if license.Status != 0 {
-			code := license.Status
+		defer func() { result.LicenseDuration = time.Since(phase) }()
+		return runParallel(ctx, len(keys), min(2, runtime.GOMAXPROCS(0)), func(ctx context.Context, i int) error {
+			key := keys[i]
+			result := &timings[i]
+			version, _ := strconv.ParseUint(key.Versions, 10, 32)
+			phase := time.Now()
+			p, e := standalone.NewPlaybackExchange(ctx, cfg.Runtime, cfg.Metadata.StableID)
+			result.LicenseRuntimeDuration += time.Since(phase)
+			if e != nil {
+				return e
+			}
+			contexts[i] = p
+			phase = time.Now()
+			spc, e := p.SPC(ctx, cert, key.URI, uint32(version))
+			result.LicenseSPCDuration += time.Since(phase)
+			if e != nil {
+				return e
+			}
+			request := am.LicenseRequest{Protocol: "simplified", GUID: cfg.Metadata.StableID, AssetID: cfg.AssetID, KeyURI: key.URI, SPC: base64.StdEncoding.EncodeToString(spc)}
+			clear(spc)
+			var headers time.Duration
+			prepare := func(ctx context.Context, plan am.PlaybackRequestPlan) (http.Header, error) {
+				start := time.Now()
+				h, err := cfg.Prepare(ctx, plan)
+				headers += time.Since(start)
+				return h, err
+			}
+			select {
+			case requestGate <- struct{}{}:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+			phase = time.Now()
+			license, e := cfg.Protocol.FetchPlaybackLicense(ctx, cfg.Profile, cfg.Session, cfg.Metadata, request, prepare)
+			<-requestGate
+			result.LicenseHeadersDuration += headers
+			result.LicenseExchangeDuration += time.Since(phase) - headers
+			request.SPC = ""
+			if e != nil {
+				return e
+			}
+			if license.Status != 0 {
+				code := license.Status
+				license.Destroy()
+				return fmt.Errorf("playback license status %d", code)
+			}
+			ckc, e := base64.StdEncoding.Strict().DecodeString(license.CKC)
 			license.Destroy()
-			return result, fmt.Errorf("playback license status %d", code)
-		}
-		ckc, e := base64.StdEncoding.Strict().DecodeString(license.CKC)
-		license.Destroy()
-		if e != nil {
+			if e != nil {
+				clear(ckc)
+				return errors.New("invalid CKC encoding")
+			}
+			phase = time.Now()
+			e = p.LoadCKC(ctx, ckc)
+			result.LicenseCKCDuration += time.Since(phase)
 			clear(ckc)
-			return result, errors.New("invalid CKC encoding")
-		}
-		phase = time.Now()
-		e = p.LoadCKC(ctx, ckc)
-		result.LicenseCKCDuration += time.Since(phase)
-		clear(ckc)
-		if e != nil {
-			return result, e
-		}
-		fmt.Fprintf(cfg.Progress, "ALAC licensed context ready: keyOrdinal=%d\n", i+1)
+			if e != nil {
+				return e
+			}
+			return nil
+		})
 	}
-	result.LicenseDuration = time.Since(licenseStart)
+	// Acquisition and licensing depend only on the validated playlist. Join both
+	// before decryption or cleanup; either failure cancels the other operation.
+	err = runParallel(ctx, 2, 2, func(ctx context.Context, i int) error {
+		if i == 0 {
+			return acquire(ctx)
+		}
+		return license(ctx)
+	})
+	for i, timing := range timings {
+		result.LicenseRuntimeDuration += timing.LicenseRuntimeDuration
+		result.LicenseSPCDuration += timing.LicenseSPCDuration
+		result.LicenseHeadersDuration += timing.LicenseHeadersDuration
+		result.LicenseExchangeDuration += timing.LicenseExchangeDuration
+		result.LicenseCKCDuration += timing.LicenseCKCDuration
+		if err == nil {
+			fmt.Fprintf(cfg.Progress, "ALAC licensed context ready: keyOrdinal=%d\n", i+1)
+		}
+	}
+	if err != nil {
+		return result, err
+	}
 	if job == nil {
 		return result, nil
 	}
@@ -172,4 +225,37 @@ func Run(ctx context.Context, cfg Config) (result *Result, err error) {
 	err = job.decrypt(ctx, cfg.Progress, contexts, cfg.Workers, cfg.Benchmark)
 	result.DecryptionDuration = time.Since(decryptStarted)
 	return result, err
+}
+
+// runParallel joins every started operation before returning, including on
+// failure, so the caller can safely close all partially prepared contexts.
+func runParallel(ctx context.Context, count, workers int, work func(context.Context, int) error) error {
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	var group sync.WaitGroup
+	jobs := make(chan int)
+	for range min(count, max(1, workers)) {
+		group.Go(func() {
+			for i := range jobs {
+				if ctx.Err() != nil {
+					return
+				}
+				if err := work(ctx, i); err != nil {
+					cancel(err)
+					return
+				}
+			}
+		})
+	}
+dispatch:
+	for i := range count {
+		select {
+		case jobs <- i:
+		case <-ctx.Done():
+			break dispatch
+		}
+	}
+	close(jobs)
+	group.Wait()
+	return context.Cause(ctx)
 }

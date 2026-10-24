@@ -23,6 +23,7 @@ type DownloadOptions struct {
 // SampleDuration includes fragment I/O. DecryptionDuration also includes setup
 // and worker cloning, setup reads and cleanup. TotalDuration includes metadata,
 // acquisition and licensing; constructor authentication is excluded.
+// AcquisitionDuration and LicenseDuration overlap and must not be added.
 type DownloadResult struct {
 	Path                    string
 	EncryptedPath           string

@@ -106,15 +106,11 @@ func (p *PlaybackExchange) NewALACGoDecryptor(ctx context.Context, firstSample [
 }
 
 func (v *goVM) installALACCapture(c *alacLoopCapture) (func() error, error) {
-	if v.goMachine.Hook != nil {
-		return nil, errors.New("Go execution observer already installed")
+	remove, err := v.goMachine.ObserveAt([]uint64{0x401bfbac, 0x401c4598}, func(address uint64) { c.capture(address) })
+	if err != nil {
+		return nil, err
 	}
-	v.goMachine.Hook = func(address uint64) {
-		if address == 0x401bfbac || address == 0x401c4598 {
-			c.capture(address)
-		}
-	}
-	return func() error { v.goMachine.Hook = nil; return nil }, nil
+	return func() error { remove(); return nil }, nil
 }
 
 // DecryptALACSample accepts one access unit. It leaves the final partial block

@@ -167,6 +167,10 @@ offline. Keep both inputs private. Output must be a new file.
   in Go. The translated runtime in `internal/apkgo` executes build-time lowered
   APK operations. Its embedded `.ir.gz` files contain translated operations and
   static image data; they are required runtime assets, not native dependencies.
+- Licensing uses compiled Go blocks for the measured hot paths, with an
+  interpreter fallback for the remaining operations. Device initialization,
+  authentication and parts of licensing still require that fallback. Removing
+  it or its images before replacing those callers would break the client.
 - The ALAC hot loop and instruction operations are generated translations. They
   preserve the analyzed behavior and have not been rewritten into a clean-room
   description of Apple's cryptographic algorithms. Public API, transport,
