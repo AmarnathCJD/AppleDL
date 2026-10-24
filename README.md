@@ -171,6 +171,13 @@ offline. Keep both inputs private. Output must be a new file.
   interpreter fallback for the remaining operations. Device initialization,
   authentication and parts of licensing still require that fallback. Removing
   it or its images before replacing those callers would break the client.
+- MT19937 seeding, state update and output tempering are independent algorithms
+  in `internal/mt19937`. Temporary adapters connect them to existing callers;
+  the surrounding initialization and protocol routines still need replacement.
+- Montgomery squaring is an independent limb-arithmetic algorithm in
+  `internal/montgomery`. Its temporary caller adapter preserves the unreduced
+  result, execution budget and observation boundaries of the existing runtime.
+  The surrounding modular-arithmetic routines still need replacement.
 - The ALAC hot loop and instruction operations are generated translations. They
   preserve the analyzed behavior and have not been rewritten into a clean-room
   description of Apple's cryptographic algorithms. Public API, transport,

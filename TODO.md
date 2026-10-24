@@ -7,6 +7,10 @@
 
 ## Complete idiomatic Go rewrite
 
+- [x] Extract MT19937 seed, state update, and output tempering into an independent Go package; validate guarded caller adapters against the original operations. Offline SPC exercises state update and tempering; seed initialization still needs real-path coverage.
+- [ ] Recover the remaining random-generator initialization and callers, then remove their temporary machine adapters.
+- [x] Extract complete Montgomery squaring into independent Go limb arithmetic; verify raw results, interpreter boundary state, scheduling and randomized mathematical reference cases. Offline SPC covers 64-word operands.
+- [ ] Recover complete modular-arithmetic operations and validate their inputs/outputs against the original licensing path.
 - [ ] Replace the APK-derived instruction interpreter and translated routines with direct, idiomatic Go implementations across authentication, provisioning, licensing, and sample decryption, including the generated ALAC hot loop.
 - [ ] Identify which static tables are still necessary and document their purpose; embedding translated instructions as Go arrays does not count as completing the rewrite.
 - [ ] Remove `internal/apkgo` and its `.ir.gz` assets once all callers have replacements.
