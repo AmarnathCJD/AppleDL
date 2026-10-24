@@ -1,5 +1,38 @@
 package montgomery
 
+import "math/big"
+
+// Exp writes base^exponent modulo modulus as little-endian words, clears unused
+// destination words, and returns the significant word count. The modulus must
+// be nonzero and dst must have at least len(modulus) words. Aliasing is allowed.
+// Like math/big.Exp, this is variable-time and must not be used with a secret
+// exponent. It is intended for the public-exponent operation in the caller.
+func Exp(dst, base, exponent, modulus []uint32) int {
+	if len(dst) < len(modulus) {
+		panic("montgomery: exponentiation destination too small")
+	}
+	decode := func(words []uint32) *big.Int {
+		raw := make([]byte, len(words)*4)
+		PutBytes(raw, words, 0)
+		defer clear(raw)
+		return new(big.Int).SetBytes(raw)
+	}
+	n := decode(modulus)
+	defer clear(n.Bits())
+	if n.Sign() == 0 {
+		panic("montgomery: exponentiation requires a nonzero modulus")
+	}
+	b, e := decode(base), decode(exponent)
+	defer clear(b.Bits())
+	defer clear(e.Bits())
+	result := new(big.Int).Exp(b, e, n)
+	defer clear(result.Bits())
+	raw := result.Bytes()
+	defer clear(raw)
+	SetBytes(dst, raw, 0)
+	return (result.BitLen() + 31) / 32
+}
+
 // NegativeInverse returns -1/a modulo 2^32. The word must be odd.
 // Each Newton step doubles the number of correct bits, starting from one bit.
 func NegativeInverse(a uint32) uint32 {

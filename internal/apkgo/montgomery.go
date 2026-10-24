@@ -6,6 +6,108 @@ import (
 	"github.com/AmarnathCJD/AppleDL/internal/montgomery"
 )
 
+// exponentiate bridges the two pinned public-exponent callers to an independent
+// Go algorithm. Only input/output fields cross this boundary; temporary bignums,
+// arithmetic registers and the instruction-by-instruction execution disappear.
+func (m *Machine) exponentiate(end, budget uint64) uint64 {
+	// One bounded 2048-bit public-exponent operation is one scheduling unit.
+	// Charging the old instruction count can strand calls near a quantum boundary
+	// on the translated path. Observers retain instruction-level execution.
+	const work = 1
+	c, r, base := &m.CPU, &m.CPU.R, m.licenseBase
+	if budget < work || m.Hook != nil || m.observer != nil ||
+		end >= base && end < base+0x800000 {
+		return 0
+	}
+	sp, bias := r[32], r[24]
+	if r[27] != base+0xdb0 || r[21] != sp+0x1bc98 {
+		return 0
+	}
+	continuation := m.Memory.Get(sp+0x1bc60, 64)
+	if continuation != base+0x56e2c4 && continuation != base+0x3f7cc4 {
+		return 0
+	}
+	const countOffset = uint64(0xea8fbbaa5061c9d9)
+	modulusHandle := m.Memory.Get(sp+0x1a70, 64)
+	exponentHandle := r[15]
+	if m.Memory.Get(sp+0x1a00, 64) != 256 ||
+		m.Memory.Get(modulusHandle+countOffset, 32) != 64 ||
+		m.Memory.Get(exponentHandle+countOffset, 32) != 1 {
+		return 0
+	}
+	modulusAddress := m.Memory.Get(modulusHandle+countOffset+4, 64) + bias
+	exponentAddress := m.Memory.Get(exponentHandle+countOffset+4, 64) + bias
+	exponent := uint32(m.Memory.Get(exponentAddress, 32))
+	// The caller supplies the exponent. Restrict this variable-time operation
+	// to the public value whose complete protocol contract has been validated.
+	if exponent != 65537 || m.Memory.Get(modulusAddress, 32)&1 == 0 ||
+		m.Memory.Get(modulusAddress+63*4, 32) == 0 {
+		return 0
+	}
+	source, adjustment := m.Memory.Get(sp+0x19b8, 64), byte(0)
+	if r[19] != 0 {
+		source, adjustment = r[19], 0x32
+	}
+	resultHandle := m.Memory.Get(sp+0x1a40, 64)
+	resultAddress := m.Memory.Get(resultHandle+0x338, 64) + bias
+	if resultAddress != resultHandle+0x128 {
+		return 0
+	}
+	output, mask := m.Memory.Get(sp+0x1dc10, 64), byte(0x7a)
+	if output == 0 {
+		output, mask = m.Memory.Get(sp+0x19a0, 64), 0
+	}
+	statusAddress := m.Memory.Get(sp+0x1d70, 64)
+	status := m.Memory.Get(sp+0x1e174, 32)
+	writes := [][2]uint64{{resultAddress, 256}, {resultHandle + 0x334, 4}, {statusAddress, 4}}
+	if output != 0 {
+		writes = append(writes, [2]uint64{output, 256})
+	}
+	for i, area := range writes {
+		for _, other := range writes[:i] {
+			if rangesOverlap(area[0], area[1], other[0], other[1]) {
+				return 0
+			}
+		}
+		for _, input := range [...][2]uint64{
+			{source, 256}, {modulusAddress, 256}, {exponentAddress, 4},
+			{resultHandle + 0x338, 8}, {sp + 0x19a0, 0xd8},
+			{sp + 0x1bc60, 8}, {sp + 0x1d7c0, 8}, {sp + 0x1e174, 4},
+			{base + 0xdb0, 0x5000},
+		} {
+			if rangesOverlap(area[0], area[1], input[0], input[1]) {
+				return 0
+			}
+		}
+		// Resolve all destinations before the first write.
+		m.Memory.Slice(area[0], area[1])
+	}
+	var input, modulus, result [64]uint32
+	defer clear(input[:])
+	defer clear(modulus[:])
+	defer clear(result[:])
+	montgomery.SetBytes(input[:], m.Memory.Slice(source, 256), adjustment)
+	modulusBytes := m.Memory.Slice(modulusAddress, 256)
+	for i := range modulus {
+		modulus[i] = binary.LittleEndian.Uint32(modulusBytes[i*4:])
+	}
+	words := montgomery.Exp(result[:], input[:], []uint32{exponent}, modulus[:])
+	out := m.Memory.Slice(resultAddress, 256)
+	for i, word := range result {
+		binary.LittleEndian.PutUint32(out[i*4:], word)
+	}
+	m.Memory.Put(resultHandle+0x334, uint64(words), 32)
+	if output != 0 {
+		montgomery.PutBytes(m.Memory.Slice(output, 256), result[:], mask)
+	}
+	m.Memory.Put(statusAddress, status, 32)
+	// The surrounding caller still owns its cleanup and continuation. Its
+	// allocator cursor is unchanged by the replaced operation.
+	r[9], r[24], r[27] = 0, continuation, base+0xdb0
+	c.PC = base + 0x5754d4
+	return work
+}
+
 func (m *Machine) inverseMontgomery(end, budget uint64) uint64 {
 	const operations = 432
 	c, r, base := &m.CPU, &m.CPU.R, m.licenseBase

@@ -176,9 +176,13 @@ offline. Keep both inputs private. Output must be a new file.
   the surrounding initialization and protocol routines still need replacement.
 - Montgomery word inversion, multiplication, squaring and byte encoding are
   independent algorithms in `internal/montgomery`. The input conversion handles
-  both plain and byte-adjusted data. Temporary caller adapters preserve the
-  unreduced results, execution budgets and observation boundaries of the runtime.
-  The surrounding modular-arithmetic routines still need replacement.
+  both plain and byte-adjusted data. The complete 2048-bit public-exponent
+  operation now uses Go's `math/big.Exp`, including integer/byte output and status
+  handling at the caller boundary. Its exponent comes from the caller; the
+  adapter accepts only the validated public value. This variable-time function
+  must not be used with secret exponents. Observed or unsupported calls retain
+  the reference path. Protocol orchestration and other arithmetic callers still
+  need replacement.
 - The ALAC hot loop and instruction operations are generated translations. They
   preserve the analyzed behavior and have not been rewritten into a clean-room
   description of Apple's cryptographic algorithms. Public API, transport,

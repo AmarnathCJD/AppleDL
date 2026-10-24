@@ -13,7 +13,8 @@
 - [x] Extract Montgomery multiplication into the same independent package; validate unreduced math/big results, caller state and scheduling. Complete offline SPC requests match the reference.
 - [x] Extract the Montgomery word inverse using five Newton steps; validate mathematical results, caller state, aliasing and scheduling. Four replacements run per complete offline SPC request.
 - [x] Extract modular input/output byte conversion, including the adjusted input path, partial words, padding and truncation. Compare accepted calls in complete offline SPC requests against original CPU/memory state; keep validation fixtures outside the client tree.
-- [ ] Recover complete modular-arithmetic operations and validate their inputs/outputs against the original licensing path.
+- [x] Replace the complete validated 2048-bit public-exponent caller with `math/big.Exp`, including byte output precedence and status copying. All four calls in 18 varied offline SPC requests use it and match the reference. Unsupported inputs and instruction observation retain the reference path.
+- [ ] Recover remaining modular-arithmetic callers and remove their machine adapters after all supported paths have direct replacements.
 - [ ] Replace the APK-derived instruction interpreter and translated routines with direct, idiomatic Go implementations across authentication, provisioning, licensing, and sample decryption, including the generated ALAC hot loop.
 - [ ] Identify which static tables are still necessary and document their purpose; embedding translated instructions as Go arrays does not count as completing the rewrite.
 - [ ] Remove `internal/apkgo` and its `.ir.gz` assets once all callers have replacements.

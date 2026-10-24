@@ -1,11 +1,16 @@
 package apkgo
 
 // These loops replace the pinned image's most frequently repeated arithmetic.
-// Their operation counts retain the interpreter's scheduling/cancellation bound.
+// Arithmetic loops retain exact operation counts; bounded semantic calls charge
+// scheduling work independently of the number of instructions they replace.
 // An instruction hook uses the reference path, including stops inside a loop.
 func (m *Machine) licenseLoop(end, budget uint64) uint64 {
 	offset := m.CPU.PC - m.licenseBase
 	switch offset {
+	case 0x56e930:
+		if used := m.exponentiate(end, budget); used != 0 {
+			return used
+		}
 	case 0x56ea90, 0x56ec24:
 		if used := m.decodeMontgomery(end, budget); used != 0 {
 			return used
