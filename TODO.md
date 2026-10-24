@@ -8,6 +8,9 @@
 ## Complete idiomatic Go rewrite
 
 - [x] Extract MT19937 seed, state update, and output tempering into an independent Go package; validate guarded caller adapters against the original operations. Offline SPC exercises state update and tempering; seed initialization still needs real-path coverage.
+- [x] Replace the second obfuscated MT19937 state-update caller with the same independent generator. Prove the three arithmetic identities for all 32-bit inputs and validate 128 replacements in each of 18 complete offline SPC requests.
+- [x] Extract the byte mask and Sattolo word permutation into an independent slice transform. Validate original CPU/memory boundaries and 1,024 replacements in each of 18 complete offline SPC requests.
+- [ ] Recover the surrounding table-generation caller and remove its temporary transform and generator adapters.
 - [ ] Recover the remaining random-generator initialization and callers, then remove their temporary machine adapters.
 - [x] Extract complete Montgomery squaring into independent Go limb arithmetic; verify raw results, interpreter boundary state, scheduling and randomized mathematical reference cases. Offline SPC covers 64-word operands.
 - [x] Extract Montgomery multiplication into the same independent package; validate unreduced math/big results, caller state and scheduling. Complete offline SPC requests match the reference.

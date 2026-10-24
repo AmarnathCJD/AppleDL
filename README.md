@@ -172,8 +172,14 @@ offline. Keep both inputs private. Output must be a new file.
   authentication and parts of licensing still require that fallback. Removing
   it or its images before replacing those callers would break the client.
 - MT19937 seeding, state update and output tempering are independent algorithms
-  in `internal/mt19937`. Temporary adapters connect them to existing callers;
-  the surrounding initialization and protocol routines still need replacement.
+  in `internal/mt19937`. Both recovered state-update callers use that algorithm,
+  including the obfuscated table-generation caller. Temporary adapters connect
+  them to existing callers; initialization and protocol orchestration still
+  need replacement.
+- The recovered byte mask and eight-byte word permutation are an independent
+  slice transform in `internal/scramble`. Its table-generation caller uses it
+  through a temporary adapter. It is a table representation transform, not a
+  general-purpose cipher; the surrounding generator still needs replacement.
 - Montgomery word inversion, multiplication, squaring and byte encoding are
   independent algorithms in `internal/montgomery`. The input conversion handles
   both plain and byte-adjusted data. The complete 2048-bit public-exponent

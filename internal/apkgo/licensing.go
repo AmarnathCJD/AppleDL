@@ -7,6 +7,14 @@ package apkgo
 func (m *Machine) licenseLoop(end, budget uint64) uint64 {
 	offset := m.CPU.PC - m.licenseBase
 	switch offset {
+	case 0x193e94:
+		if used := m.twistTableRandom(end, budget); used != 0 {
+			return used
+		}
+	case 0x1988a4:
+		if used := m.scrambleTable(end, budget); used != 0 {
+			return used
+		}
 	case 0x56e930:
 		if used := m.exponentiate(end, budget); used != 0 {
 			return used

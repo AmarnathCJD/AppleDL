@@ -112,3 +112,79 @@ func rangesOverlap(a, sizeA, b, sizeB uint64) bool {
 	}
 	return a-b < sizeB
 }
+
+// twistTableRandom recognizes the second caller's obfuscated MT19937 update.
+// The generator operates on an ordinary State; only boundary state lives here.
+func (m *Machine) twistTableRandom(end, budget uint64) uint64 {
+	const work = 1
+	c, r, base := &m.CPU, &m.CPU.R, m.licenseBase
+	if budget < work || m.Hook != nil || m.observer != nil ||
+		end >= c.PC && end < base+0x194158 ||
+		r[12] != 0 || r[9] != 4 || r[20] != 7 ||
+		r[0] != 0x9ece02f8 || r[1] != 0xcf67017d || r[2] != 0x1312f74e ||
+		r[3] != base+0x193e94 || r[4] != base+0x193f4c ||
+		r[22]+r[23]+0xb5b != 224 {
+		return 0
+	}
+	address, table, vectors := r[17], base+0xdb0, r[32]+0x19d0
+	if rangesOverlap(address, 624*4, table, 44) ||
+		rangesOverlap(address, 624*4, r[28], 8) ||
+		rangesOverlap(address, 624*4, vectors, 48) ||
+		m.Memory.Get(r[28], 32) != 0x74a177f0 ||
+		m.Memory.Get(r[28]+4, 32) != 0xeda9c72f {
+		return 0
+	}
+	for _, branch := range [...][2]uint64{{0, 0}, {1, 0x70}, {3, 0x78}, {4, 0}, {5, 0xb8}, {9, 0}, {10, 0xac}} {
+		if m.Memory.Get(table+branch[0]*4, 32) != branch[1] {
+			return 0
+		}
+	}
+	data := m.Memory.Slice(address, 624*4)
+	first := binary.LittleEndian.Uint32(data)
+	for lane := range 4 {
+		for _, constant := range [...][2]uint32{
+			{1, first}, {5, 0x80000000}, {6, 0x7ffffffe},
+			{7, 0x9ece02f8}, {16, 0xcf67017d}, {17, 0x1312f74e},
+		} {
+			if binary.LittleEndian.Uint32(c.V[constant[0]][lane*4:]) != constant[1] {
+				return 0
+			}
+		}
+		for i, value := range [...]uint32{0x28124777, 0xb966610f, 0x72ccc21c} {
+			if m.Memory.Get(vectors+uint64(i*16+lane*4), 32) != uint64(value) {
+				return 0
+			}
+		}
+	}
+	var state mt19937.State
+	defer clear(state[:])
+	for i := range state {
+		state[i] = binary.LittleEndian.Uint32(data[i*4:])
+	}
+	last := [4]uint32(state[620:624])
+	defer clear(last[:])
+	state.Twist()
+	writeRandomState(data, &state)
+	// The translated continuation still sees the last SIMD group's scratch
+	// values. They are computed directly, without executing either loop.
+	for lane, next := range last {
+		matrix := uint32(0x74a177f0)
+		if next&1 != 0 {
+			matrix ^= 0x9908b0df
+		}
+		distant := state[392+lane]
+		for _, value := range [...][2]uint32{
+			{0, next}, {1, next}, {2, distant ^ matrix ^ 0x28124777},
+			{3, distant}, {4, next * 2}, {7, 0x72ccc21c},
+			{16, 0xb966610f}, {17, 0x28124777},
+		} {
+			binary.LittleEndian.PutUint32(c.V[value[0]][lane*4:], value[1])
+		}
+	}
+	r[0], r[8], r[9] = 0x13ff, 14, 7
+	r[10], r[11], r[12] = uint64(state[623]), table, 0x49ac0d62
+	r[13], r[14], r[15], r[16] = 1, 0x7a1af524, uint64(last[3]), 0x3aa4aa95
+	c.arithmetic(0, ^uint64(0), 1, 64, true)
+	c.PC = base + 0x194158
+	return work
+}
